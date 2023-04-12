@@ -2,6 +2,7 @@ const express = require("express"); // initialize backend: set up express
 const cors = require("cors"); // initialize backend: cors for FE permission access
 const PORT = 8000; // initialize backend: defining PORT for the API
 const app = express(); // initialize backend: create the API
+const { db } = require("./database"); // database: import the database connection into the main execute file
 
 app.use(express.json()); // initialize backend: json interpreter, so
 // your API understand JSON structure data
