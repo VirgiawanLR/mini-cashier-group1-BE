@@ -107,4 +107,27 @@ module.exports = {
       return res.status(500).send({ message: error.message, isSuccess: false });
     }
   },
+
+  keepLogin: async (req, res) => {
+    const { user_ID } = req.user;
+    let checkUserIdQuery = `SELECT * from Users WHERE user_ID=${db.escape(
+      user_ID
+    )}`;
+    try {
+      const checkUserIdResult = await query(checkUserIdQuery);
+      if (checkUserIdResult.length === 0) {
+        return res
+          .status(401)
+          .send({ message: "unauthorized!", isSuccess: false });
+      } else {
+        const { email, username, phone_number } = checkUserIdResult[0];
+        const data = { user_ID, username, email, phone_number };
+        return res
+          .status(200)
+          .send({ message: "success", isSuccess: true, data });
+      }
+    } catch (error) {
+      return res.status(500).send({ message: error.message, isSuccess: false });
+    }
+  },
 };
