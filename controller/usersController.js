@@ -120,7 +120,7 @@ module.exports = {
           .status(401)
           .send({ message: "unauthorized!", isSuccess: false });
       } else {
-        const { email, password, phone_number } = checkUserIdResult[0];
+        const { email, username, phone_number } = checkUserIdResult[0];
         const data = { user_ID, username, email, phone_number };
         return res
           .status(200)
