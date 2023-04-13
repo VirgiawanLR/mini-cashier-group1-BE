@@ -26,9 +26,9 @@ module.exports = {
     )})`;
 
     try {
-      const insertNewUser = await query(insertNewUserQuery);
+      const insertNewUserResult = await query(insertNewUserQuery);
       let payload = {
-        user_ID: insertNewUser.insertId,
+        user_ID: insertNewUserResult.insertId,
         username,
         email,
         phone_number,
@@ -63,12 +63,48 @@ module.exports = {
       user_ID
     )}`;
     try {
-      const updateVerify = await query(updateVerifyQuery);
+      const updateVerifyResult = await query(updateVerifyQuery);
       return res
         .status(200)
         .send({ message: "your account is verified!", isSuccess: true });
     } catch (error) {
       return res.status(400).send({ message: error.message, isSuccess: false });
+    }
+  },
+
+  loginAccount: async (req, res) => {
+    const { email, password } = req.body;
+    let checkEmailQuery = `SELECT * FROM Users WHERE email=${db.escape(email)}`;
+    try {
+      const checkEmailResult = await query(checkEmailQuery);
+      if (checkEmailResult.length === 0) {
+        return res
+          .status(401)
+          .send({ message: "invalid email and password", isSuccess: false });
+      }
+
+      let isPassMatch = await bcrypt.compare(
+        password,
+        checkEmailResult[0].password
+      );
+
+      if (!isPassMatch) {
+        return res
+          .status(401)
+          .send({ message: "invalid email and password", isSuccess: false });
+      } else {
+        const { user_ID, username, email, phone_number } = checkEmailResult[0];
+        const user = { user_ID, username, email, phone_number };
+        const token = createToken(user);
+
+        return res.status(200).send({
+          message: "login success",
+          isSuccess: true,
+          data: { token, user },
+        });
+      }
+    } catch (error) {
+      return res.status(500).send({ message: error.message, isSuccess: false });
     }
   },
 };
