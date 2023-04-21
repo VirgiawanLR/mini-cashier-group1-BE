@@ -83,6 +83,13 @@ module.exports = {
           .send({ message: "invalid email and password", isSuccess: false });
       }
 
+      if (!checkEmailResult[0].is_verify) {
+        return res.status(401).send({
+          message: "your account is not yet verified",
+          isSuccess: false,
+        });
+      }
+
       let isPassMatch = await bcrypt.compare(
         password,
         checkEmailResult[0].password
