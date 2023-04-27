@@ -36,7 +36,6 @@ module.exports = {
 
       const token = createToken(payload);
       let mailToSend = mail(email, token);
-      console.log(token);
 
       transporter.sendMail(mailToSend, (errMail, resMail) => {
         if (errMail) {
