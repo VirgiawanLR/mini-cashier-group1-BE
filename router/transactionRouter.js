@@ -10,5 +10,11 @@ router.post(
   tokenDecoder,
   transactionController.getDetailTransaction
 );
+router.get("/gross", tokenDecoder, transactionController.getGrossIncome);
+router.get(
+  "/total-order/daily",
+  tokenDecoder,
+  transactionController.getTotalOrderDaily
+);
 
 module.exports = router;
