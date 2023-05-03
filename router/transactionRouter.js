@@ -10,7 +10,7 @@ router.post(
   tokenDecoder,
   transactionController.getDetailTransaction
 );
-router.get("/gross", tokenDecoder, transactionController.getGrossIncome);
+router.get("/gross/daily", tokenDecoder, transactionController.getGrossIncome);
 router.get(
   "/total-order/daily",
   tokenDecoder,
