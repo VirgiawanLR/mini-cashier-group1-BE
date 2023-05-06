@@ -1,5 +1,6 @@
 const { db, query } = require("../database");
 const { encrypt, decrypt } = require("../helper/cryptoJS");
+const { fillZeroTransactionDay } = require("../helper/fillZeroTransactionDay");
 
 module.exports = {
   postNewTransaction: async (req, res) => {
@@ -162,16 +163,22 @@ module.exports = {
       LOCATE(' ', transaction_date)>0,
       SUBSTRING(transaction_date, 1, LOCATE(' ', transaction_date)-1), 
       null) as date_column, sum(transaction_totalprice) as total_gross
-      from Transaction where
+      from Transaction where user_ID=${db.escape(user_ID)} AND
       transaction_date between ${db.escape(start)} AND ${db.escape(end)}
       group by date_column order by date_column desc`;
 
     try {
       const getGrossResponse = await query(getGrossQuery);
+      const newData = fillZeroTransactionDay(
+        start,
+        end,
+        getGrossResponse,
+        "total_gross"
+      );
       return res.status(200).send({
         message: "success to fetch data",
         isSuccess: true,
-        data: getGrossResponse,
+        data: newData,
       });
     } catch (error) {
       return res.status(400).send({ message: error.message, isSuccess: false });
@@ -199,16 +206,22 @@ module.exports = {
       LOCATE(' ', transaction_date)>0,
       SUBSTRING(transaction_date, 1, LOCATE(' ', transaction_date)-1), 
       null) as date_column, count(*) as total_transaction
-      from Transaction where
+      from Transaction where user_ID=${db.escape(user_ID)} AND
       transaction_date between ${db.escape(start)} AND ${db.escape(end)}
       group by date_column order by date_column desc;`;
 
     try {
       const getTotalOrderResp = await query(getTotalOrderQuery);
+      const newData = fillZeroTransactionDay(
+        start,
+        end,
+        getTotalOrderResp,
+        "total_transaction"
+      );
       return res.status(200).send({
         message: "success to fetch data",
         isSuccess: true,
-        data: getTotalOrderResp,
+        data: newData,
       });
     } catch (error) {
       return res.status(400).send({ message: error.message, isSuccess: false });
