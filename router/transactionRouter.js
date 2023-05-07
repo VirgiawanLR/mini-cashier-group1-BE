@@ -16,5 +16,11 @@ router.get(
   tokenDecoder,
   transactionController.getTotalOrderDaily
 );
+router.get("/categories", tokenDecoder, transactionController.getCategory);
+router.get(
+  "/categories/top-product",
+  tokenDecoder,
+  transactionController.getTopProductByCategory
+);
 
 module.exports = router;
