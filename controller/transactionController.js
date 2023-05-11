@@ -1,5 +1,6 @@
 const { db, query } = require("../database");
 const { encrypt, decrypt } = require("../helper/cryptoJS");
+const { fillZeroTransactionDay } = require("../helper/fillZeroTransactionDay");
 
 module.exports = {
   postNewTransaction: async (req, res) => {
@@ -113,7 +114,6 @@ module.exports = {
     where t.user_ID = ${db.escape(user_ID)} and t.transaction_ID = ${db.escape(
       transaction_ID
     )}`;
-    // console.log(detailTransactionQuery);
 
     try {
       const detailTransResp = await query(detailTransactionQuery);
@@ -136,6 +136,149 @@ module.exports = {
         message: "success to fetch data",
         isSuccess: true,
         data,
+      });
+    } catch (error) {
+      return res.status(400).send({ message: error.message, isSuccess: false });
+    }
+  },
+
+  getGrossIncome: async (req, res) => {
+    const { user_ID } = req.user;
+    let { start, end } = req.query;
+
+    if (!user_ID) {
+      return res
+        .status(401)
+        .send({ message: "Not authorized to proceed", isSuccess: "false" });
+    }
+
+    if (!(start && end)) {
+      end = new Date();
+      start = new Date().setDate(end.getDate() - 6);
+      start = new Date(start).toISOString().split("T")[0] + " 00:00:00";
+      end = end.toISOString().split("T")[0] + " 23:59:59";
+    }
+
+    let getGrossQuery = `SELECT IF(
+      LOCATE(' ', transaction_date)>0,
+      SUBSTRING(transaction_date, 1, LOCATE(' ', transaction_date)-1), 
+      null) as date_column, sum(transaction_totalprice) as total_gross
+      from Transaction where user_ID=${db.escape(user_ID)} AND
+      transaction_date between ${db.escape(start)} AND ${db.escape(end)}
+      group by date_column order by date_column desc`;
+
+    try {
+      const getGrossResponse = await query(getGrossQuery);
+      const newData = fillZeroTransactionDay(
+        start,
+        end,
+        getGrossResponse,
+        "total_gross"
+      );
+      return res.status(200).send({
+        message: "success to fetch data",
+        isSuccess: true,
+        data: newData,
+      });
+    } catch (error) {
+      return res.status(400).send({ message: error.message, isSuccess: false });
+    }
+  },
+
+  getTotalOrderDaily: async (req, res) => {
+    const { user_ID } = req.user;
+    let { start, end } = req.query;
+
+    if (!user_ID) {
+      return res
+        .status(401)
+        .send({ message: "Not authorized to proceed", isSuccess: "false" });
+    }
+
+    if (!(start && end)) {
+      end = new Date();
+      start = new Date().setDate(end.getDate() - 6);
+      start = new Date(start).toISOString().split("T")[0] + " 00:00:00";
+      end = end.toISOString().split("T")[0] + " 23:59:59";
+    }
+
+    let getTotalOrderQuery = `SELECT IF(
+      LOCATE(' ', transaction_date)>0,
+      SUBSTRING(transaction_date, 1, LOCATE(' ', transaction_date)-1), 
+      null) as date_column, count(*) as total_transaction
+      from Transaction where user_ID=${db.escape(user_ID)} AND
+      transaction_date between ${db.escape(start)} AND ${db.escape(end)}
+      group by date_column order by date_column desc;`;
+
+    try {
+      const getTotalOrderResp = await query(getTotalOrderQuery);
+      const newData = fillZeroTransactionDay(
+        start,
+        end,
+        getTotalOrderResp,
+        "total_transaction"
+      );
+      return res.status(200).send({
+        message: "success to fetch data",
+        isSuccess: true,
+        data: newData,
+      });
+    } catch (error) {
+      return res.status(400).send({ message: error.message, isSuccess: false });
+    }
+  },
+
+  getCategory: async (req, res) => {
+    const { user_ID } = req.user;
+
+    if (!user_ID) {
+      return res
+        .status(401)
+        .send({ message: "Not authorized to proceed", isSuccess: "false" });
+    }
+
+    const getCategoryQuery = `SELECT category_ID,category_name
+     FROM db_mini_cashier.Categories WHERE user_ID=${db.escape(user_ID)}`;
+    try {
+      const getCategoryResp = await query(getCategoryQuery);
+      return res.status(200).send({
+        message: "success to fetch data",
+        isSuccess: true,
+        data: getCategoryResp,
+      });
+    } catch (error) {
+      return res.status(400).send({ message: error.message, isSuccess: false });
+    }
+  },
+
+  getTopProductByCategory: async (req, res) => {
+    const { user_ID } = req.user;
+    let { category_ID } = req.query;
+    category_ID = parseInt(category_ID);
+
+    if (!user_ID) {
+      return res
+        .status(401)
+        .send({ message: "Not authorized to proceed", isSuccess: "false" });
+    }
+
+    let getTopProductQuery = `select p.product_name as product_name,
+    sum(tp.quantity) as total_ordered from Transaction_product_rlt tp 
+    join Products p on p.product_ID = tp.product_ID where `;
+
+    if (category_ID !== 0) {
+      getTopProductQuery += `p.category_ID = ${db.escape(category_ID)} and `;
+    }
+
+    getTopProductQuery += `p.user_ID = ${db.escape(user_ID)}
+    group by product_name order by total_ordered desc limit 0,6;`;
+
+    try {
+      const getTopProductResp = await query(getTopProductQuery);
+      return res.status(200).send({
+        message: "success to fetch data",
+        isSuccess: true,
+        data: getTopProductResp,
       });
     } catch (error) {
       return res.status(400).send({ message: error.message, isSuccess: false });
