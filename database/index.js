@@ -7,7 +7,7 @@ const db = mysql.createConnection({
   //database: creating connection into the desired database
   host: "localhost",
   user: "root",
-  password: "roottapibukan",
+  password: "root",
   database: "db_mini_cashier",
   port: 3306,
   multipleStatements: true,
